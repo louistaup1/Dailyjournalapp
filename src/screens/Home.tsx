@@ -55,7 +55,9 @@ export function Home() {
             </p>
           ) : (
             <>
-              {started && <p className="muted">You started today's check-in.</p>}
+              <p className="notice muted">
+                {started ? "You started today's check-in. You can pick it up where you left off." : "Today's check-in is here whenever you're ready."}
+              </p>
               <button className="btn block" onClick={() => navigate(`/checkin/${today}/0`)}>
                 {started ? "Continue today's check-in" : "Start today's check-in"}
               </button>

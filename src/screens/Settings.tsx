@@ -1,5 +1,8 @@
-import { useRef, useState } from 'react';
-import { allEntries, allRecaps, importData } from '../db';
+import { useEffect, useRef, useState } from 'react';
+import { allEntries, allRecaps, getSettings, importData, setSettings } from '../db';
+import { isIOS, isStandalone, notificationSupport, type NotifySupport } from '../lib/reminders';
+import { showReminder, syncReminders } from '../lib/reminderClient';
+import type { Settings as SettingsT } from '../lib/types';
 import { todayKey } from '../lib/dates';
 import { parseImport, toExportJSON, toMarkdown } from '../lib/exportData';
 import { saveFile } from '../lib/files';
@@ -16,10 +19,98 @@ export function Settings() {
       </div>
       <div className="grow">
         <h1 className="title">Settings</h1>
-        <DataSection />
+        <SettingsBody />
       </div>
       <Footer />
     </div>
+  );
+}
+
+function SettingsBody() {
+  const [s, setS] = useState<SettingsT | null>(null);
+  useEffect(() => {
+    void getSettings().then(setS);
+  }, []);
+  if (!s) return null;
+  const update = async (patch: Partial<SettingsT>) => {
+    setS((cur) => (cur ? { ...cur, ...patch } : cur));
+    await setSettings(patch);
+  };
+  return (
+    <>
+      <ReminderSection s={s} update={update} />
+      <DataSection />
+    </>
+  );
+}
+
+type Update = (patch: Partial<SettingsT>) => Promise<void>;
+
+function ReminderSection({ s, update }: { s: SettingsT; update: Update }) {
+  const [support, setSupport] = useState<NotifySupport>(notificationSupport);
+  const [note, setNote] = useState('');
+
+  const toggle = async (on: boolean) => {
+    void update({ reminderEnabled: on });
+    if (on && support === 'default') {
+      const p = await Notification.requestPermission();
+      setSupport(notificationSupport());
+      if (p !== 'granted') setNote('Notifications were not allowed. The prompt on the home screen still appears.');
+    }
+    await syncReminders();
+  };
+
+  const setTime = async (t: string) => {
+    if (!t) return;
+    // A new time today should be able to fire again.
+    await update({ reminderTime: t, lastReminderDate: undefined });
+    await syncReminders();
+  };
+
+  const test = async () => {
+    setNote((await showReminder(true)) ? 'Sent.' : 'This browser could not show a notification.');
+  };
+
+  return (
+    <section>
+      <hr className="hairline" />
+      <h2>Daily reminder</h2>
+      <label className="check">
+        <input type="checkbox" checked={s.reminderEnabled} onChange={(e) => void toggle(e.target.checked)} />
+        Remind me each day
+      </label>
+      <div className="field" style={{ marginTop: '0.5rem' }}>
+        <label htmlFor="rtime">Time</label>
+        <input id="rtime" type="time" value={s.reminderTime} onChange={(e) => void setTime(e.target.value)} />
+      </div>
+      {support === 'unsupported' && (
+        <p className="muted small">
+          {isIOS() && !isStandalone()
+            ? 'On iPhone, notifications work once the app is added to the Home Screen (iOS 16.4 or later). Open it from there and turn this on again.'
+            : 'This browser cannot show notifications. The prompt on the home screen still appears.'}
+        </p>
+      )}
+      {support === 'denied' && (
+        <p className="muted small">Notifications are turned off for this app in the system or browser settings.</p>
+      )}
+      {s.reminderEnabled && support === 'ok' && (
+        <>
+          <p className="muted small">
+            There is no server behind this app, so the phone decides when it may run. The reminder arrives when the
+            app is open or in the background, or when Android wakes it, and may come later than the set time. If
+            today's check-in isn't done, the home screen always shows a quiet prompt.
+          </p>
+          <button className="link" style={{ paddingLeft: 0 }} onClick={test}>
+            Send a test reminder
+          </button>
+        </>
+      )}
+      {note && (
+        <p className="muted small" role="status">
+          {note}
+        </p>
+      )}
+    </section>
   );
 }
 
