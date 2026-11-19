@@ -1,0 +1,11 @@
+// Deploys the built app (dist/) as static files on Cloudflare Workers.
+// Git builds: build command `npm run build`, deploy command `npx wrangler deploy`.
+{
+  "name": "dailyjournalapp",
+  "compatibility_date": "2026-11-01",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  },
+  "workers_dev": true
+}

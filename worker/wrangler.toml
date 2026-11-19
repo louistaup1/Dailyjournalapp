@@ -13,13 +13,14 @@ crons = ["*/5 * * * *"]
 # and paste the id it prints here.
 [[kv_namespaces]]
 binding = "SUBS"
-id = "REPLACE_WITH_KV_NAMESPACE_ID"
+id = "43e4c3b5d5084f3ca4524d8ac8ec4ec5"
 
 [vars]
 # The address the journal app is served from, e.g. "https://my-journal.pages.dev".
-ALLOWED_ORIGIN = "REPLACE_WITH_APP_ORIGIN"
-# Contact for push services (required by the VAPID spec). A mailto: or https: URL.
-VAPID_SUBJECT = "mailto:you@example.com"
+ALLOWED_ORIGIN = "https://dailyjournalapp.louis-taupin.workers.dev"
+# Contact for push services (required by the VAPID spec). A mailto: or https: URL;
+# the app's own address is used so no email address is published.
+VAPID_SUBJECT = "https://dailyjournalapp.louis-taupin.workers.dev"
 # Public half of the VAPID key pair (npm run vapid). The private half is a secret:
 #   npx wrangler secret put VAPID_PRIVATE_KEY
-VAPID_PUBLIC_KEY = "REPLACE_WITH_VAPID_PUBLIC_KEY"
+VAPID_PUBLIC_KEY = "BPDmGfGJjOsqiu0PLW6yw6Hl13i3yCYRI2TtMwCUmyj4jciil57JPX7JC5yMObOdc7IgbqZmfE7QU-FNS7jJ9S4"

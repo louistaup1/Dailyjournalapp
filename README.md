@@ -36,7 +36,11 @@ The service worker (offline use and notifications) is only active in the product
 
 ## Put it online so your phone can open it
 
-The app is a static site: the `dist/` folder after `npm run build`. Any static host works. Two free options:
+The app is a static site: the `dist/` folder after `npm run build`. Any static host works.
+
+**Cloudflare Workers (current setup).** `wrangler.jsonc` publishes `dist/` as a Worker named `dailyjournalapp`, and `.env.production` points the build at the push server, so a Git-connected Cloudflare build needs only: build command `npm run build`, deploy command `npx wrangler deploy`, root directory empty, and `NODE_VERSION` = `22`. By hand: `npm run build && npx wrangler deploy`.
+
+Other free options:
 
 **Cloudflare Pages**
 
