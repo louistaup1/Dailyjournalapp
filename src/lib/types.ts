@@ -62,6 +62,7 @@ export interface Settings {
   recapAuto: boolean;
   recapWeekday: number; // 0 = Sunday
   recapTime: string; // "HH:MM"
+  lastAutoRecapEnd?: DateKey;
   apiKey?: string;
   pinHash?: string;
   pinSalt?: string;

@@ -4,6 +4,7 @@ import { isIOS, isStandalone, notificationSupport, type NotifySupport } from '..
 import { showReminder, syncReminders } from '../lib/reminderClient';
 import type { Settings as SettingsT } from '../lib/types';
 import { weekdayName } from '../lib/dates';
+import { checkPin, hashPin, isValidPin, newSalt } from '../lib/pin';
 import { todayKey } from '../lib/dates';
 import { parseImport, toExportJSON, toMarkdown } from '../lib/exportData';
 import { saveFile } from '../lib/files';
@@ -41,6 +42,7 @@ function SettingsBody() {
     <>
       <ReminderSection s={s} update={update} />
       <RecapSection s={s} update={update} />
+      <PinSection s={s} update={update} />
       <DataSection />
     </>
   );
@@ -192,6 +194,107 @@ function RecapSection({ s, update }: { s: SettingsT; update: Update }) {
         The key is stored only in this app's storage on this phone and is sent only to api.anthropic.com when you
         generate a recap. It is not included in exports.
       </p>
+    </section>
+  );
+}
+
+function PinSection({ s, update }: { s: SettingsT; update: Update }) {
+  const [mode, setMode] = useState<'idle' | 'set' | 'remove'>('idle');
+  const [a, setA] = useState('');
+  const [b, setB] = useState('');
+  const [c, setC] = useState('');
+  const [msg, setMsg] = useState('');
+  const has = !!s.pinHash;
+
+  const reset = (m = '') => {
+    setMode('idle');
+    setA('');
+    setB('');
+    setC('');
+    setMsg(m);
+  };
+
+  const save = async () => {
+    if (has && !(await checkPin(b, s.pinSalt, s.pinHash))) return setMsg('The current PIN didn\u2019t match.');
+    if (!isValidPin(a)) return setMsg('Use 4 to 8 digits.');
+    if (c !== a) return setMsg('The two PINs are different.');
+    const salt = newSalt();
+    await update({ pinSalt: salt, pinHash: await hashPin(a, salt) });
+    reset('PIN saved. The app will ask for it when it opens.');
+  };
+
+  const remove = async () => {
+    if (!(await checkPin(a, s.pinSalt, s.pinHash))) return setMsg('That PIN didn\u2019t match.');
+    await update({ pinSalt: undefined, pinHash: undefined });
+    reset('PIN removed.');
+  };
+
+  const digits = (set: (v: string) => void) => (e: React.ChangeEvent<HTMLInputElement>) => set(e.target.value.replace(/\D/g, ''));
+
+  return (
+    <section>
+      <hr className="hairline" />
+      <h2>PIN lock</h2>
+      <p className="muted small">
+        {has ? 'The app asks for a PIN when it opens.' : 'Ask for a PIN when the app opens.'} This keeps the journal
+        private on an unlocked phone; it does not encrypt the data. If the PIN is forgotten, the only way back in is
+        to clear the app's data, so keep an export.
+      </p>
+      {mode === 'idle' && (
+        <div>
+          <button className="link" style={{ paddingLeft: 0 }} onClick={() => setMode('set')}>
+            {has ? 'Change PIN' : 'Set a PIN'}
+          </button>
+          {has && (
+            <button className="link" onClick={() => setMode('remove')}>
+              Remove PIN
+            </button>
+          )}
+        </div>
+      )}
+      {mode === 'set' && (
+        <>
+          {has && (
+            <div className="field">
+              <label htmlFor="pincur">Current PIN</label>
+              <input id="pincur" type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={b} onChange={digits(setB)} />
+            </div>
+          )}
+          <div className="field">
+            <label htmlFor="pinnew">New PIN, 4 to 8 digits</label>
+            <input id="pinnew" type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={a} onChange={digits(setA)} />
+          </div>
+          <div className="field">
+            <label htmlFor="pinagain">Same PIN again</label>
+            <input id="pinagain" type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={c} onChange={digits(setC)} />
+          </div>
+          <button className="btn" onClick={save}>
+            Save PIN
+          </button>
+          <button className="link" onClick={() => reset()}>
+            Cancel
+          </button>
+        </>
+      )}
+      {mode === 'remove' && (
+        <>
+          <div className="field">
+            <label htmlFor="pinrm">Current PIN</label>
+            <input id="pinrm" type="password" inputMode="numeric" autoComplete="off" maxLength={8} value={a} onChange={digits(setA)} />
+          </div>
+          <button className="btn" onClick={remove}>
+            Remove PIN
+          </button>
+          <button className="link" onClick={() => reset()}>
+            Cancel
+          </button>
+        </>
+      )}
+      {msg && (
+        <p className="muted small" role="status" style={{ marginTop: '0.75rem' }}>
+          {msg}
+        </p>
+      )}
     </section>
   );
 }

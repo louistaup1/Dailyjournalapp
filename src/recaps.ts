@@ -1,4 +1,4 @@
-import { db, entriesBetween, getSettings } from './db';
+import { db, entriesBetween, getSettings, setSettings } from './db';
 import { lastScheduledRecapDay, previousWeek, todayKey, weekEndingOn, type DateKey } from './lib/dates';
 import { buildRecapPrompt } from './lib/recapPrompt';
 
@@ -52,8 +52,10 @@ export async function runAutoRecap(now = new Date()): Promise<void> {
   const s = await getSettings();
   if (!s.recapAuto) return;
   const end = lastScheduledRecapDay(s.recapWeekday, s.recapTime, now);
-  const existing = await db.recaps.where('end').equals(end).count();
-  if (existing) return;
+  // Once per scheduled week, even if that summary is later deleted.
+  if (s.lastAutoRecapEnd && s.lastAutoRecapEnd >= end) return;
+  await setSettings({ lastAutoRecapEnd: end });
+  if (await db.recaps.where('end').equals(end).count()) return;
   // Only weeks with something written in them.
   const { stats } = await weekData(end);
   if (!stats.daysWithEntries) return;
