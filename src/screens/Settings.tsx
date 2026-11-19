@@ -3,6 +3,7 @@ import { allEntries, allRecaps, getSettings, importData, setSettings } from '../
 import { isIOS, isStandalone, notificationSupport, type NotifySupport } from '../lib/reminders';
 import { showReminder, syncReminders } from '../lib/reminderClient';
 import type { Settings as SettingsT } from '../lib/types';
+import { weekdayName } from '../lib/dates';
 import { todayKey } from '../lib/dates';
 import { parseImport, toExportJSON, toMarkdown } from '../lib/exportData';
 import { saveFile } from '../lib/files';
@@ -39,6 +40,7 @@ function SettingsBody() {
   return (
     <>
       <ReminderSection s={s} update={update} />
+      <RecapSection s={s} update={update} />
       <DataSection />
     </>
   );
@@ -110,6 +112,86 @@ function ReminderSection({ s, update }: { s: SettingsT; update: Update }) {
           {note}
         </p>
       )}
+    </section>
+  );
+}
+
+function RecapSection({ s, update }: { s: SettingsT; update: Update }) {
+  const [key, setKey] = useState('');
+  const [show, setShow] = useState(false);
+
+  const saveKey = async () => {
+    const k = key.trim();
+    if (!k) return;
+    await update({ apiKey: k });
+    setKey('');
+  };
+
+  return (
+    <section>
+      <hr className="hairline" />
+      <h2>Weekly recap</h2>
+      <label className="check">
+        <input type="checkbox" checked={s.recapAuto} onChange={(e) => void update({ recapAuto: e.target.checked })} />
+        Make a local summary automatically each week
+      </label>
+      <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', margin: '0.5rem 0 1rem' }}>
+        <div className="field" style={{ margin: 0 }}>
+          <label htmlFor="rday">Day</label>
+          <select id="rday" value={s.recapWeekday} onChange={(e) => void update({ recapWeekday: Number(e.target.value) })} style={{ width: 'auto' }}>
+            {[0, 1, 2, 3, 4, 5, 6].map((d) => (
+              <option key={d} value={d}>
+                {weekdayName(d)}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="field" style={{ margin: 0 }}>
+          <label htmlFor="rrtime">Evening time</label>
+          <input id="rrtime" type="time" value={s.recapTime} onChange={(e) => e.target.value && void update({ recapTime: e.target.value })} />
+        </div>
+      </div>
+      <p className="muted small">
+        The automatic summary uses only numbers from this phone. A written recap with themes and questions is made
+        only when you tap Generate recap.
+      </p>
+
+      <h3 style={{ marginTop: '1.5rem' }}>Anthropic API key</h3>
+      {s.apiKey ? (
+        <>
+          <p className="muted small">
+            A key is saved on this phone: {show ? s.apiKey : `${s.apiKey.slice(0, 10)}…${s.apiKey.slice(-4)}`}.{' '}
+            <button className="link inline" onClick={() => setShow(!show)}>
+              {show ? 'Hide' : 'Show'}
+            </button>
+          </p>
+          <button className="link" style={{ paddingLeft: 0 }} onClick={() => void update({ apiKey: undefined })}>
+            Remove key
+          </button>
+        </>
+      ) : (
+        <>
+          <div className="field">
+            <label htmlFor="apikey">Key</label>
+            <input
+              id="apikey"
+              type="password"
+              autoComplete="off"
+              spellCheck={false}
+              placeholder="sk-ant-…"
+              value={key}
+              onChange={(e) => setKey(e.target.value)}
+            />
+          </div>
+          <button className="btn" onClick={saveKey} disabled={!key.trim()}>
+            Save key
+          </button>
+        </>
+      )}
+      <p className="muted small" style={{ marginTop: '1rem' }}>
+        The key is stored only in this app's storage on this phone and is sent only to api.anthropic.com when you
+        generate a recap. It is not included in exports.
+      </p>
     </section>
   );
 }

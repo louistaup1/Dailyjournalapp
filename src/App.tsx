@@ -4,6 +4,8 @@ import { CheckIn } from './screens/CheckIn';
 import { Day } from './screens/Day';
 import { Home } from './screens/Home';
 import { Settings } from './screens/Settings';
+import { Recaps } from './screens/Recaps';
+import { RecapView } from './screens/RecapView';
 
 export function App() {
   const path = useRoute();
@@ -15,5 +17,7 @@ export function App() {
   }
   if (section === 'day' && a && isDateKey(a)) return <Day key={a} date={a} />;
   if (section === 'settings') return <Settings />;
+  if (section === 'recaps') return <Recaps />;
+  if (section === 'recap' && a && /^\d+$/.test(a)) return <RecapView key={a} id={Number(a)} />;
   return <Home />;
 }

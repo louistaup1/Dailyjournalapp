@@ -1,6 +1,6 @@
 import { useState } from 'react';
-import { allEntries, getEntry } from '../db';
-import { addDays, daysBetween, formatShort, todayKey } from '../lib/dates';
+import { allEntries, allRecaps, getEntry } from '../db';
+import { addDays, daysBetween, formatRange, formatShort, todayKey } from '../lib/dates';
 import { navigate } from '../lib/router';
 import { useLive } from '../lib/useLive';
 import type { Entry } from '../lib/types';
@@ -20,11 +20,13 @@ export function Home() {
   const today = todayKey();
   const entry = useLive(() => getEntry(today), [today]);
   const entries = useLive(allEntries, []);
+  const recaps = useLive(allRecaps, []);
   const [shown, setShown] = useState(PAGE);
 
   if (!entries) return <div className="page" />;
 
   const done = !!entry?.completedAt;
+  const fresh = recaps?.find((r) => !r.seen);
   const started = !!entry && !done;
   const byDate = new Map(entries.map((e) => [e.date, e]));
 
@@ -45,6 +47,14 @@ export function Home() {
       </div>
 
       <div className="grow">
+        {fresh && (
+          <p className="notice muted">
+            A summary of {formatRange(fresh.start, fresh.end)} is ready.{' '}
+            <button className="link inline" onClick={() => navigate(`/recap/${fresh.id}`)}>
+              Read it
+            </button>
+          </p>
+        )}
         <section aria-label="Today">
           {done ? (
             <p>
@@ -65,7 +75,13 @@ export function Home() {
           )}
         </section>
 
-        <hr className="hairline" />
+        <p style={{ marginTop: '1.25rem', marginBottom: 0 }}>
+          <button className="link" style={{ paddingLeft: 0 }} onClick={() => navigate('/recaps')}>
+            Weekly recap
+          </button>
+        </p>
+
+        <hr className="hairline" style={{ marginTop: '0.75rem' }} />
 
         <section aria-label="Past days">
           <h2 className="muted small" style={{ fontWeight: 400 }}>
