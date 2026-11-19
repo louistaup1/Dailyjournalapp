@@ -1,6 +1,7 @@
 import { getEntry, getSettings, setSettings } from '../db';
 import { nextOccurrence, todayKey } from './dates';
 import { REMINDER_BODY, REMINDER_TAG, REMINDER_TITLE, notificationSupport, reminderDue } from './reminders';
+import { pushConfigured, syncPush } from './push';
 
 type PeriodicSyncManager = {
   register(tag: string, opts: { minInterval: number }): Promise<void>;
@@ -32,7 +33,7 @@ export async function showReminder(test = false): Promise<boolean> {
 
 /** Notify if due, but only while the app is in the background. */
 async function check(): Promise<void> {
-  if (document.visibilityState === 'visible') return;
+  if (pushConfigured() || document.visibilityState === 'visible') return;
   const settings = await getSettings();
   if (!reminderDue(settings, await getEntry(todayKey()))) return;
   if (await showReminder()) await setSettings({ lastReminderDate: todayKey() });
@@ -56,7 +57,10 @@ async function schedule(): Promise<void> {
  * Chrome, installed app) in step with the settings.
  */
 export async function syncReminders(): Promise<void> {
-  void schedule();
+  if (!pushConfigured()) void schedule();
+  // With a push server, reminders and the weekly recap arrive even when the app is closed.
+  void syncPush(await registration());
+  if (pushConfigured()) return;
   const s = await getSettings();
   const reg = await registration();
   const ps = (reg as ServiceWorkerRegistration & { periodicSync?: PeriodicSyncManager } | undefined)?.periodicSync;
@@ -77,6 +81,6 @@ export function startReminders(): void {
   void syncReminders();
   document.addEventListener('visibilitychange', () => {
     void check();
-    if (document.visibilityState === 'visible') void schedule();
+    if (document.visibilityState === 'visible' && !pushConfigured()) void schedule();
   });
 }

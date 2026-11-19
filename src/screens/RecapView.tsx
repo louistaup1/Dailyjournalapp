@@ -63,6 +63,7 @@ export function RecapView({ id }: { id: number }) {
         <p className="muted">
           {s.daysWithEntries} of 7 days have entries.
         </p>
+        {recap.note && <p className="notice muted small">{recap.note}</p>}
 
         <h2>Mood</h2>
         {m.count ? (

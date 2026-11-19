@@ -52,6 +52,8 @@ export interface Recap {
   stats: WeekStats;
   previous: WeekStats | null;
   ai?: AiRecap;
+  /** Why an automatic recap fell back to the local summary. */
+  note?: string;
   seen?: boolean;
 }
 
@@ -63,6 +65,7 @@ export interface Settings {
   recapWeekday: number; // 0 = Sunday
   recapTime: string; // "HH:MM"
   lastAutoRecapEnd?: DateKey;
+  pushToken?: string;
   apiKey?: string;
   pinHash?: string;
   pinSalt?: string;

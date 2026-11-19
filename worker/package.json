@@ -1,0 +1,23 @@
+{
+  "name": "journal-push",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "description": "Sends the journal's daily reminder and weekly recap pushes. Stores no journal content.",
+  "scripts": {
+    "dev": "wrangler dev --test-scheduled",
+    "deploy": "wrangler deploy",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "vapid": "node scripts/vapid-keys.mjs"
+  },
+  "dependencies": {
+    "@block65/webcrypto-web-push": "^2.0.0"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20260101.0",
+    "typescript": "^5.9.0",
+    "vitest": "^5.1.1",
+    "wrangler": "^4.0.0"
+  }
+}

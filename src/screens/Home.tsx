@@ -49,7 +49,7 @@ export function Home() {
       <div className="grow">
         {fresh && (
           <p className="notice muted">
-            A summary of {formatRange(fresh.start, fresh.end)} is ready.{' '}
+            {fresh.kind === 'ai' ? 'Your recap for' : 'A summary of'} {formatRange(fresh.start, fresh.end)} is ready.{' '}
             <button className="link inline" onClick={() => navigate(`/recap/${fresh.id}`)}>
               Read it
             </button>

@@ -1,5 +1,5 @@
 /// <reference types="vitest/config" />
-import { defineConfig, type Plugin } from 'vite';
+import { defineConfig, loadEnv, type Plugin } from 'vite';
 import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
@@ -11,7 +11,7 @@ const BG = '#f5f2ec';
  * Anthropic API (used when "Generate recap" is tapped). Left out of dev, where
  * Vite injects inline scripts.
  */
-const csp = (): Plugin => ({
+const csp = (pushUrl: string): Plugin => ({
   name: 'csp',
   apply: 'build',
   transformIndexHtml: () => [
@@ -25,7 +25,7 @@ const csp = (): Plugin => ({
           "style-src 'self' 'unsafe-inline'",
           "img-src 'self' data: blob:",
           "font-src 'self'",
-          "connect-src 'self' https://api.anthropic.com",
+          `connect-src 'self' https://api.anthropic.com${pushUrl ? ' ' + new URL(pushUrl).origin : ''}`,
           "worker-src 'self'",
           "manifest-src 'self'",
           "object-src 'none'",
@@ -38,10 +38,11 @@ const csp = (): Plugin => ({
   ],
 });
 
-export default defineConfig({
+export default defineConfig(({ mode }) => ({
   plugins: [
     react(),
-    csp(),
+    // VITE_PUSH_URL (optional): the deployed push server from worker/, e.g. https://journal-push.you.workers.dev
+    csp(loadEnv(mode, process.cwd(), 'VITE_').VITE_PUSH_URL ?? ''),
     VitePWA({
       strategies: 'injectManifest',
       srcDir: 'src',
@@ -68,6 +69,9 @@ export default defineConfig({
         shortcuts: [{ name: "Today's check-in", url: './#/checkin', icons: [{ src: 'pwa-192x192.png', sizes: '192x192' }] }],
       },
       injectManifest: {
+        // A classic script: Safari and Chrome both run it, and no module-only
+        // syntax (import.meta) can end up in it.
+        rollupFormat: 'iife',
         globPatterns: ['**/*.{js,css,html,svg,png,ico,webmanifest}'],
       },
       devOptions: { enabled: false },
@@ -77,4 +81,4 @@ export default defineConfig({
     environment: 'node',
     include: ['src/**/*.test.ts'],
   },
-});
+}));

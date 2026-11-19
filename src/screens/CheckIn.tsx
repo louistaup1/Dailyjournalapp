@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { getEntry, markComplete, requestPersistence, saveEntry } from '../db';
 import { formatLong, todayKey, type DateKey } from '../lib/dates';
+import { reportDone } from '../lib/push';
 import { navigate } from '../lib/router';
 import type { Entry, EntryPatch, ReflectionField } from '../lib/types';
 import { INTRO, STEPS } from '../lib/types';
@@ -111,6 +112,7 @@ export function CheckIn({ date, at, editing = false }: Props) {
     if (editing) return go('summary');
     if (last) {
       await markComplete(date);
+      if (isToday) void reportDone(date);
       return go('summary');
     }
     go(String(stepIndex + 1));

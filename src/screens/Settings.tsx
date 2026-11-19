@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { allEntries, allRecaps, getSettings, importData, setSettings } from '../db';
 import { isIOS, isStandalone, notificationSupport, type NotifySupport } from '../lib/reminders';
 import { showReminder, syncReminders } from '../lib/reminderClient';
+import { pushConfigured, sendTestPush } from '../lib/push';
 import type { Settings as SettingsT } from '../lib/types';
 import { weekdayName } from '../lib/dates';
 import { checkPin, hashPin, isValidPin, newSalt } from '../lib/pin';
@@ -72,7 +73,10 @@ function ReminderSection({ s, update }: { s: SettingsT; update: Update }) {
   };
 
   const test = async () => {
-    setNote((await showReminder(true)) ? 'Sent.' : 'This browser could not show a notification.');
+    if (pushConfigured()) {
+      await syncReminders();
+      setNote((await sendTestPush()) ? 'Sent through the push server. It should arrive in a few seconds.' : 'The push server could not be reached.');
+    } else setNote((await showReminder(true)) ? 'Sent.' : 'This browser could not show a notification.');
   };
 
   return (
@@ -99,11 +103,18 @@ function ReminderSection({ s, update }: { s: SettingsT; update: Update }) {
       )}
       {s.reminderEnabled && support === 'ok' && (
         <>
-          <p className="muted small">
-            There is no server behind this app, so the phone decides when it may run. The reminder arrives when the
-            app is open or in the background, or when Android wakes it, and may come later than the set time. If
-            today's check-in isn't done, the home screen always shows a quiet prompt.
-          </p>
+          {pushConfigured() ? (
+            <p className="muted small">
+              Reminders come from your push server, so they arrive even when the app is closed. Days you've already
+              checked in are skipped.
+            </p>
+          ) : (
+            <p className="muted small">
+              No push server is set up, so the phone decides when the app may run: the reminder arrives when the app
+              is open or in the background, or when Android wakes it, and may come late. See the README to set up
+              reminders that arrive with the app closed.
+            </p>
+          )}
           <button className="link" style={{ paddingLeft: 0 }} onClick={test}>
             Send a test reminder
           </button>
@@ -134,13 +145,27 @@ function RecapSection({ s, update }: { s: SettingsT; update: Update }) {
       <hr className="hairline" />
       <h2>Weekly recap</h2>
       <label className="check">
-        <input type="checkbox" checked={s.recapAuto} onChange={(e) => void update({ recapAuto: e.target.checked })} />
-        Make a local summary automatically each week
+        <input
+          type="checkbox"
+          checked={s.recapAuto}
+          onChange={async (e) => {
+            const on = e.target.checked;
+            await update({ recapAuto: on });
+            if (on && pushConfigured() && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+              await Notification.requestPermission();
+            }
+            await syncReminders();
+          }}
+        />
+        Make the weekly recap automatically
       </label>
       <div style={{ display: 'flex', gap: '0.75rem', flexWrap: 'wrap', margin: '0.5rem 0 1rem' }}>
         <div className="field" style={{ margin: 0 }}>
           <label htmlFor="rday">Day</label>
-          <select id="rday" value={s.recapWeekday} onChange={(e) => void update({ recapWeekday: Number(e.target.value) })} style={{ width: 'auto' }}>
+          <select id="rday" value={s.recapWeekday} onChange={async (e) => {
+            await update({ recapWeekday: Number(e.target.value) });
+            await syncReminders();
+          }} style={{ width: 'auto' }}>
             {[0, 1, 2, 3, 4, 5, 6].map((d) => (
               <option key={d} value={d}>
                 {weekdayName(d)}
@@ -150,12 +175,20 @@ function RecapSection({ s, update }: { s: SettingsT; update: Update }) {
         </div>
         <div className="field" style={{ margin: 0 }}>
           <label htmlFor="rrtime">Evening time</label>
-          <input id="rrtime" type="time" value={s.recapTime} onChange={(e) => e.target.value && void update({ recapTime: e.target.value })} />
+          <input id="rrtime" type="time" value={s.recapTime} onChange={async (e) => {
+            if (!e.target.value) return;
+            await update({ recapTime: e.target.value });
+            await syncReminders();
+          }} />
         </div>
       </div>
       <p className="muted small">
-        The automatic summary uses only numbers from this phone. A written recap with themes and questions is made
-        only when you tap Generate recap.
+        {s.apiKey
+          ? "With an API key saved, the automatic recap sends that week's entries (and the previous week's, for comparison) to Anthropic to write it. If that fails, a local summary is saved instead."
+          : 'Without an API key, the automatic recap is a local summary: numbers only, nothing leaves the phone.'}{' '}
+        {pushConfigured()
+          ? "It's made on the evening you choose, even with the app closed, and a notification lets you know."
+          : "It's made the next time you open the app after the evening you choose."}
       </p>
 
       <h3 style={{ marginTop: '1.5rem' }}>Anthropic API key</h3>
@@ -191,8 +224,8 @@ function RecapSection({ s, update }: { s: SettingsT; update: Update }) {
         </>
       )}
       <p className="muted small" style={{ marginTop: '1rem' }}>
-        The key is stored only in this app's storage on this phone and is sent only to api.anthropic.com when you
-        generate a recap. It is not included in exports.
+        The key is stored only in this app's storage on this phone and is sent only to api.anthropic.com, when a
+        recap is generated. It is not included in exports or sent to the push server.
       </p>
     </section>
   );
