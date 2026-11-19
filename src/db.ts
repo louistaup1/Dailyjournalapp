@@ -90,3 +90,46 @@ export async function requestPersistence(): Promise<boolean> {
     return false;
   }
 }
+
+export function deleteEntry(date: DateKey): Promise<void> {
+  return db.entries.delete(date);
+}
+
+// ---------- recaps ----------
+
+export function allRecaps(): Promise<Recap[]> {
+  return db.recaps.orderBy('createdAt').reverse().toArray();
+}
+
+// ---------- import ----------
+
+/**
+ * Merge imported data. For a day that exists on both sides, the more recently
+ * updated version wins. Recaps already present (same kind, week and time) are
+ * skipped.
+ */
+export async function importData(entries: Entry[], recaps: Recap[]): Promise<{ added: number; updated: number; kept: number; recaps: number }> {
+  const res = { added: 0, updated: 0, kept: 0, recaps: 0 };
+  await db.transaction('rw', db.entries, db.recaps, async () => {
+    for (const e of entries) {
+      const cur = await db.entries.get(e.date);
+      if (!cur) {
+        await db.entries.put(e);
+        res.added++;
+      } else if (e.updatedAt >= cur.updatedAt) {
+        await db.entries.put(e);
+        res.updated++;
+      } else res.kept++;
+    }
+    const existing = await db.recaps.toArray();
+    const seen = new Set(existing.map((r) => `${r.kind}|${r.end}|${r.createdAt}`));
+    for (const r of recaps) {
+      const k = `${r.kind}|${r.end}|${r.createdAt}`;
+      if (seen.has(k)) continue;
+      seen.add(k);
+      await db.recaps.add(r);
+      res.recaps++;
+    }
+  });
+  return res;
+}
