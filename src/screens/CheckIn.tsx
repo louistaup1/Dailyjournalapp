@@ -229,11 +229,11 @@ export function CheckIn({ date, at, editing = false }: Props) {
       </div>
 
       <div className="actions">
-        <button className="link" onClick={back}>
+        <button className="btn-quiet" onClick={back}>
           Back
         </button>
         <span className="spacer" />
-        <button className="link" onClick={skip}>
+        <button className="btn-quiet" onClick={skip}>
           Skip
         </button>
         <button className="btn" onClick={next}>

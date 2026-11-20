@@ -4,6 +4,7 @@
   --muted: #7a746b;
   --faint: #a59e94;
   --line: #e3ded5;
+  --line-strong: #cdc6ba;
   --field: #faf8f4;
   --accent: #a8c5e0;
   --accent-text: #23303c;
@@ -26,6 +27,7 @@
     --muted: #a39c91;
     --faint: #7c766d;
     --line: #3d3a36;
+    --line-strong: #55514b;
     --field: #312f2b;
     --accent: #a9c3dc;
     --accent-text: #20262d;
@@ -149,6 +151,22 @@ button {
   color: var(--muted);
   cursor: pointer;
   text-decoration: none;
+}
+
+.btn-quiet {
+  appearance: none;
+  min-height: 48px;
+  padding: 0 1.1rem;
+  border: 1px solid var(--line-strong);
+  border-radius: 10px;
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.btn-quiet:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
 }
 
 .link.inline {
@@ -308,7 +326,7 @@ label.check input {
   background: var(--bg);
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  gap: 0.6rem;
   padding: 0.9rem 0 0.4rem;
   margin-top: 1.5rem;
 }
