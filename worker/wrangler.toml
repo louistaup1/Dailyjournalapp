@@ -1,0 +1,26 @@
+name = "journal-push"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+# Every 5 minutes: checks whether a reminder or weekly recap is due.
+# One run lists the stored subscriptions (one, for a single user), well
+# within the free tier.
+[triggers]
+crons = ["*/5 * * * *"]
+
+# Holds the push subscription and schedule only. Create it with
+#   npx wrangler kv namespace create SUBS
+# and paste the id it prints here.
+[[kv_namespaces]]
+binding = "SUBS"
+id = "43e4c3b5d5084f3ca4524d8ac8ec4ec5"
+
+[vars]
+# The address the journal app is served from, e.g. "https://my-journal.pages.dev".
+ALLOWED_ORIGIN = "https://dailyjournalapp.louis-taupin.workers.dev"
+# Contact for push services (required by the VAPID spec). A mailto: or https: URL;
+# the app's own address is used so no email address is published.
+VAPID_SUBJECT = "https://dailyjournalapp.louis-taupin.workers.dev"
+# Public half of the VAPID key pair (npm run vapid). The private half is a secret:
+#   npx wrangler secret put VAPID_PRIVATE_KEY
+VAPID_PUBLIC_KEY = "BPDmGfGJjOsqiu0PLW6yw6Hl13i3yCYRI2TtMwCUmyj4jciil57JPX7JC5yMObOdc7IgbqZmfE7QU-FNS7jJ9S4"
