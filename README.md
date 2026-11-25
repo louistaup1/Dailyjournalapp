@@ -15,7 +15,7 @@ There are no analytics, no third-party scripts and no web fonts, and a Content-S
 - **Daily check-in**: mood (1–10 buttons and an optional note), four reflection questions, and a mindfulness checkbox with optional minutes. One screen per step with Back, Skip and Next. Skipped or blank steps are not stored. A summary at the end lets you edit anything.
 - **Home**: today's status ("Start today's check-in" or "Done for today · mood 6/10") and every past day. Missed days are plain dates. Any day can be opened, edited or deleted.
 - **Reminders**: a daily notification at a time you choose (default 9:00), even when the app is closed (with the push server). Days you've already checked in are skipped. Tapping it opens today's check-in. See [Reminders with the app closed](#reminders-with-the-app-closed).
-- **Weekly recap**, made automatically on the evening you choose (Sunday 19:00 by default) or on demand: mood average, highest and lowest day, day-by-day numbers, mindfulness days and minutes, changes from the previous week, and (when generated) recurring themes for each question and 2–3 open questions you might bring to your therapist. Each recap is saved in history.
+- **Recap**, made automatically each week on the evening you choose (Sunday 19:00 by default), or any time for a period you pick: mood average, highest and lowest day, day-by-day numbers, mindfulness days and minutes, changes from the previous week, and (when generated) recurring themes for each question and 2–3 open questions you might bring to your therapist. Each recap is saved in history.
 - **Local summary**: the same numbers with no network request.
 - **PIN lock** on open, **export** to JSON and Markdown, **import** from JSON.
 - Works offline once installed. Follows the system's light or dark mode and reduced-motion setting.
@@ -96,7 +96,7 @@ Without a key, everything else works; the weekly recap is then a local summary.
 ## Weekly recap
 
 - **Automatic**: on the evening you choose (Settings → Weekly recap; Sunday at 19:00 by default) the recap for the past 7 days is made and saved. With an API key saved, it sends that week's entries and the previous week's to Anthropic to write the full recap; without a key, or if the request fails, it saves a local summary instead and says why. With the push server set up this happens with the app closed and a notification lets you know; without it, it happens the next time you open the app.
-- **Generate recap** (Recap screen, or on any local summary): the same, on demand. The button says that entries are sent.
+- **Any time** (home screen → **Recap**): pick a period (the last 7 days, the last 14 days, **since my last recap**, or two dates, up to 31 days), then tap **Generate recap** for the written version or **Local summary** for numbers only. "Since my last recap" suits therapy: make one before each session and it covers everything since the previous one. Comparisons use the same number of days just before the period. The Generate button says that entries are sent.
 - **Local summary**: numbers only (mood, mindfulness, how many days each question was answered). No network.
 
 The recap is written to be neutral and factual: no diagnosis, no clinical labels, and no advice beyond a few open questions.

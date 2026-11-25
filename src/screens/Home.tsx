@@ -77,7 +77,7 @@ export function Home() {
 
         <p style={{ marginTop: '1.25rem', marginBottom: 0 }}>
           <button className="link" style={{ paddingLeft: 0 }} onClick={() => navigate('/recaps')}>
-            Weekly recap
+            Recap
           </button>
         </p>
 

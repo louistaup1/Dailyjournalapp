@@ -488,6 +488,15 @@ label.check input {
   color: var(--muted);
 }
 
+.days.long .d {
+  font-size: 0.7rem;
+  white-space: nowrap;
+}
+
+.days.long {
+  row-gap: 0.6rem;
+}
+
 .days .v {
   font-size: 1.05rem;
 }

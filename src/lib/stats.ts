@@ -57,16 +57,23 @@ export function weekStats(week: WeekRange, entries: Entry[]): WeekStats {
   };
 }
 
-/** Plain-language differences between this week and the previous one. */
+/** "the previous week" for 7 days, otherwise "the previous 14 days". */
+export function previousLabel(s: WeekStats): string {
+  const n = s.mood.byDay.length;
+  return n === 7 ? 'the previous week' : `the previous ${n} days`;
+}
+
+/** Plain-language differences between this period and the one before it. */
 export function compareWeeks(cur: WeekStats, prev: WeekStats | null): string[] {
   if (!prev || prev.daysWithEntries === 0) return [];
   const out: string[] = [];
+  const label = previousLabel(cur);
   if (cur.mood.average !== null && prev.mood.average !== null) {
     const diff = Math.round((cur.mood.average - prev.mood.average) * 10) / 10;
-    if (diff === 0) out.push(`Average mood was the same as the previous week (${cur.mood.average}).`);
+    if (diff === 0) out.push(`Average mood was the same as ${label} (${cur.mood.average}).`);
     else
       out.push(
-        `Average mood was ${cur.mood.average}, ${diff > 0 ? 'up' : 'down'} ${Math.abs(diff)} from ${prev.mood.average} the previous week.`,
+        `Average mood was ${cur.mood.average}, ${diff > 0 ? 'up' : 'down'} ${Math.abs(diff)} from ${prev.mood.average} ${label}.`,
       );
   }
   const a = cur.mindfulness;

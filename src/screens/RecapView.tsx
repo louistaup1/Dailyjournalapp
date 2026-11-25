@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { db, getSettings } from '../db';
 import { formatLong, formatRange, formatShort, toDateKey } from '../lib/dates';
 import { navigate } from '../lib/router';
-import { compareWeeks } from '../lib/stats';
+import { compareWeeks, previousLabel } from '../lib/stats';
 import { useLive } from '../lib/useLive';
 import { FIELD_LABELS, REFLECTION_FIELDS, STEPS } from '../lib/types';
 import { createAiRecap, deleteRecap, markSeen } from '../recaps';
@@ -27,12 +27,15 @@ export function RecapView({ id }: { id: number }) {
   const s = recap.stats;
   const m = s.mood;
   const changes = compareWeeks(s, recap.previous);
+  // Weekday names are enough within one week; longer periods need the date.
+  const week = m.byDay.length <= 7;
+  const dayName = (d: string) => (week ? formatLong(d).split(' ')[0] : formatShort(d));
 
   const generate = async () => {
     setBusy(true);
     setErr('');
     try {
-      const newId = await createAiRecap(recap.end);
+      const newId = await createAiRecap({ start: recap.start, end: recap.end });
       navigate(`/recap/${newId}`, true);
     } catch (e) {
       setErr((e as Error).message);
@@ -61,7 +64,7 @@ export function RecapView({ id }: { id: number }) {
         </p>
         <h1 className="title">{formatRange(recap.start, recap.end)}</h1>
         <p className="muted">
-          {s.daysWithEntries} of 7 days have entries.
+          {s.daysWithEntries} of {m.byDay.length} days have entries.
         </p>
         {recap.note && <p className="notice muted small">{recap.note}</p>}
 
@@ -71,13 +74,13 @@ export function RecapView({ id }: { id: number }) {
             <p>
               Average {m.average}.{' '}
               {m.highest && m.lowest && m.highest.date !== m.lowest.date
-                ? `Highest ${m.highest.mood} on ${formatLong(m.highest.date).split(' ')[0]}, lowest ${m.lowest.mood} on ${formatLong(m.lowest.date).split(' ')[0]}.`
+                ? `Highest ${m.highest.mood} on ${dayName(m.highest.date)}, lowest ${m.lowest.mood} on ${dayName(m.lowest.date)}.`
                 : ''}
             </p>
-            <div className="days" aria-label="Mood by day">
+            <div className={week ? 'days' : 'days long'} aria-label="Mood by day">
               {m.byDay.map((d) => (
                 <div key={d.date}>
-                  <div className="d">{formatShort(d.date).split(' ')[0]}</div>
+                  <div className="d">{week ? formatShort(d.date).split(' ')[0] : formatShort(d.date).split(' ').slice(0, 2).join(' ')}</div>
                   <div className={d.mood === null ? 'v faint' : 'v'}>{d.mood ?? '–'}</div>
                 </div>
               ))}
@@ -125,7 +128,7 @@ export function RecapView({ id }: { id: number }) {
 
         {(changes.length > 0 || (recap.ai?.changes.length ?? 0) > 0) && (
           <>
-            <h2>Compared with the previous week</h2>
+            <h2>Compared with {previousLabel(s)}</h2>
             <ul>
               {changes.map((c, i) => (
                 <li key={`s${i}`}>{c}</li>
@@ -154,7 +157,10 @@ export function RecapView({ id }: { id: number }) {
             <button className="btn block" onClick={generate} disabled={busy}>
               {busy ? 'Generating…' : 'Generate recap · sends entries to Anthropic'}
             </button>
-            <p className="muted small">Sends this week's entries, and last week's for comparison, to Anthropic.</p>
+            <p className="muted small">
+              Sends the entries from this period, and from the same number of days before it for comparison, to
+              Anthropic.
+            </p>
             {err && (
               <p className="muted" role="alert">
                 {err}

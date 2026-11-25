@@ -57,10 +57,25 @@ export function weekEndingOn(endKey: DateKey): WeekRange {
   return { start: days[0], end: endKey, days };
 }
 
+/** Every day from start to end, inclusive. */
+export function rangeOf(start: DateKey, end: DateKey): WeekRange {
+  const n = daysBetween(start, end) + 1;
+  return { start, end, days: n > 0 ? lastNDays(end, n) : [] };
+}
+
+/** The window of the same length immediately before the given one. */
+export function previousRange(range: WeekRange): WeekRange {
+  const end = addDays(range.start, -1);
+  return rangeOf(addDays(end, -(range.days.length - 1)), end);
+}
+
 /** The 7-day window immediately before the given one. */
 export function previousWeek(week: WeekRange): WeekRange {
-  return weekEndingOn(addDays(week.start, -1));
+  return previousRange(week);
 }
+
+/** The longest period a recap can cover. */
+export const MAX_RECAP_DAYS = 31;
 
 export function weekdayOf(key: DateKey): number {
   return fromDateKey(key).getDay();
